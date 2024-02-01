@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Gridify" Version="2.13.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amg.Authentication.DomainModel\Amg.Authentication.DomainModel.csproj" />
+    <ProjectReference Include="..\Amg.Authentication.QueryModel\Amg.Authentication.QueryModel.csproj" />
+  </ItemGroup>
+
+</Project>

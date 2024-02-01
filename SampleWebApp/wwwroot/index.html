@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Auth sample</title>
+    <link rel="stylesheet" href="css/site.css" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.css" />
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="content">
+                    <h6>Login</h6>
+                    <div class="row m-2">
+                        <div class="col">
+                            <input type="text" placeholder="username" id="username" />
+                        </div>
+                        <div class="col">
+                            <input type="password" placeholder="password" id="password" />
+                        </div>
+                        <div class="col">
+                            <img id="captcha-image" width="100" height="30" style="background-color: lightgrey;" alt="captcha image" />
+                            <input id="captcha-id" type="hidden" />
+                        </div>
+                        <div class="col">
+                            <input type="text" placeholder="captcha code" id="captcha-code" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <input type="button" class="btn btn-primary" id="signin" value="Signin" />
+                        </div>
+                        <div class="col">
+                            <input type="button" class="btn btn-primary" id="signout" value="Signout" />
+                        </div>
+                        <div class="col">
+                            <input type="button" class="btn btn-primary" id="reload-captcha" value="Reload Captcha" />
+                        </div>
+                        <div class="col">
+                            <input type="button" class="btn btn-primary" id="refresh-token" value="Refresh Token" />
+                        </div>
+                    </div>
+                </div>
+                <div class="content">
+                    <h6>Login Status</h6>
+                    <div class="p-2 m-2" style="background-color: lightgray;">
+                        <code id="login-result">
+                        </code>
+                    </div>
+                </div>
+                <div class="content">
+                    <h6>Login Status</h6>
+                    <div class="row m-2">
+                        <div class="col">
+                            <input type="button" class="btn btn-primary" id="user-info" value="User Info (needs login)" />
+                        </div>
+                        <div class="col">
+                            <input type="button" class="btn btn-primary" id="api-call" value="Protected Api (needs permission)" />
+                        </div>
+                    </div>
+                </div>
+                <div class="content">
+                    <h6>Api Result</h6>
+                    <div class="p-2 m-2" style="background-color: lightgray;">
+                        <code id="api-result">
+                        </code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="lib/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="js/site.js"></script>
+</body>
+</html>

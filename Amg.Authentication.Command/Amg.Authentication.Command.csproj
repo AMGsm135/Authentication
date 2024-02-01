@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Permissions\**" />
+    <EmbeddedResource Remove="Permissions\**" />
+    <None Remove="Permissions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amg.Authentication.Infrastructure\Amg.Authentication.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

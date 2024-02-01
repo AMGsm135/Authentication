@@ -1,0 +1,54 @@
+version: '3.4'
+
+services:
+  dgab.authentication.host:
+    image: dgabauthenticationhost
+    container_name: dgabauthenticationhost
+    build:
+      context: .
+      dockerfile: Dgab.Authentication.Host/Dockerfile
+    environment:
+      - HostSettings:HostAddress=http://*:5001
+      - ConnectionStrings:DatabaseConnection=Server=sqlserverdgabcafemediadb;Database=AuthDb;User=sa;Password=123321Aa!;TrustServerCertificate=True;
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Authentication_Google_ClientSecret=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
+      - Authentication_Google_ClientId=581147649015-rv5eidhtfq1qkosqvvbk17l9p9fs6u6c.apps.googleusercontent.com
+      - LD_LIBRARY_PATH=/usr/local/lib
+    networks:
+      - Dgab-network
+    ports:
+      - '5001:5001'
+    depends_on:
+      - rabbit_dgabAuthenticationhost
+      - redis_dgabAuthenticationhost
+    volumes:
+      - ./certs/:/etc/ssl/
+      - ./secrets.json:/app/secrets.json
+      - DgabAutentication-Data:/root/.aspnet/DataProtection-Keys
+
+  rabbit_dgabAuthenticationhost:
+    container_name: rabbit_dgabAuthenticationhost
+    image: 'rabbitmq:3-management-alpine'
+    logging:
+      driver: json-file
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - Dgab-network
+    volumes:
+      - Dgab-rabbitmq-data:/var/lib/rabbitmq
+  
+  redis_dgabAuthenticationhost:
+    container_name: redis_dgabAuthenticationhost
+    image: redis:alpine
+    networks:
+      - Dgab-network
+
+networks:
+  Dgab-network:
+    external: true
+volumes:
+  DgabAutentication-Data:
+  Dgab-rabbitmq-data:    
+  DgabAutentication-DataProtection-Keys:  

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Amg.Authentication.Application.Contract\Amg.Authentication.Application.Contract.csproj" />
+    <ProjectReference Include="..\Amg.Authentication.Application.Events\Amg.Authentication.Application.Events.csproj" />
+    <ProjectReference Include="..\Amg.Authentication.DomainModel\Amg.Authentication.DomainModel.csproj" />
+  </ItemGroup>
+
+</Project>

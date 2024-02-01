@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+ 		
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Amg.Authentication.Command\Amg.Authentication.Command.csproj" />
+		<ProjectReference Include="..\Amg.Authentication.DomainModel\Amg.Authentication.DomainModel.csproj" />
+		<ProjectReference Include="..\Amg.Authentication.Infrastructure\Amg.Authentication.Infrastructure.csproj" />
+	</ItemGroup>
+
+</Project>
