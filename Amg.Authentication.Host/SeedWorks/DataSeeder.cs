@@ -94,17 +94,18 @@ namespace Amg.Authentication.Host.SeedWorks
         {
             const string username = "Administrator";
             const string password = "P@ssw0rd";
-            const string name = "کاربر ارشد";
+            const string firstname = "کاربر";
+            const string lastname = "ارشد";
 
             var currentAdmin = await userManager.FindByNameAsync(username);
             if (currentAdmin == null)
             {
-                var admin = new User(username, name, PersonType.Individual, null)
-                    {
-                        Id = Guid.NewGuid(),
-                        UserName = username,
-                        PhoneNumberConfirmed = true
-                    };
+                var admin = new User(username, firstname, lastname, PersonType.Individual, null, null, null)
+                {
+                    Id = Guid.NewGuid(),
+                    UserName = username,
+                    PhoneNumberConfirmed = true
+                };
                 var result = await userManager.CreateAsync(admin, password);
                 if (result.Succeeded)
                     await userManager.AddToRoleAsync(admin, RoleType.SuperAdmin.ToString());

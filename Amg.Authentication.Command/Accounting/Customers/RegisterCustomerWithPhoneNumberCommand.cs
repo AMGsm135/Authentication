@@ -6,6 +6,14 @@ namespace Amg.Authentication.Command.Accounting.Customers
 {
     public class RegisterCustomerWithPhoneNumberCommand : ValidateCaptchaCommand
     {
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+
+        public string City { get; set; }
+
+        public string Province { get; set; }
+
         public string PhoneNumber { get; set; }
 
         public override void Validate()

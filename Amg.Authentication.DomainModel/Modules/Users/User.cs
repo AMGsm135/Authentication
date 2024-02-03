@@ -8,19 +8,37 @@ namespace Amg.Authentication.DomainModel.Modules.Users
     public class User : IdentityUser<Guid>, IAggregateRoot
     {
         /// <inheritdoc />
-        public User(string userName, string name, PersonType type, string provider) : base(userName)
+        public User(string userName, string firstName, string lastName, PersonType type, string provider, string city, string province) : base(userName)
         {
-            this.Name = name;
+            this.FirstName = firstName;
+            this.LastName = lastName;
             this.RegisterDateTime = DateTime.Now;
             this.PersonType = type;
             this.Provider = provider;
             this.IsActive = true;
+            City = city;
+            Province = province;
         }
 
         /// <summary>
         /// نام
         /// </summary>
-        public string Name { get; set; }
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// نام خانوادگی
+        /// </summary>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// شهر
+        /// </summary>
+        public string City { get; set; }
+
+        /// <summary>
+        /// استان
+        /// </summary>
+        public string Province { get; set; }
 
         /// <summary>
         /// تاریخ ثبت نام

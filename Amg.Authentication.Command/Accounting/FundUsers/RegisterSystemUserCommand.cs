@@ -38,7 +38,6 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
             RuleFor(p => p.FirstName).NotEmpty().WithMessage("نام الزامی است");
             RuleFor(p => p.LastName).NotEmpty().WithMessage("نام خانوادگی الزامی است");
             RuleFor(p => p.UserName).NotEmpty().WithMessage("نام کاربری الزامی است");
-            RuleFor(p => p.PhoneNumber).NotEmpty().WithMessage("شماره موبایل الزامی است");
             RuleFor(p => p.Password).NotEmpty().WithMessage("رمز عبور الزامی است");
         }
     }

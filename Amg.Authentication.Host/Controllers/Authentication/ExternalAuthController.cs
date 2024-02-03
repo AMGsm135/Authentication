@@ -100,7 +100,7 @@ namespace Amg.Authentication.Host.Controllers.Authentication
                 if (existingUser == null)
                 {
                     userWasCreatedOrNot = true;
-                    var newUser = new User(userInformation.Email, userInformation.FirstName + userInformation.LastName, Infrastructure.Enums.PersonType.Individual, "Google");
+                    var newUser = new User(userInformation.Email, userInformation.FirstName, userInformation.LastName, Infrastructure.Enums.PersonType.Individual, "Google", null, null);
 
                     var createUserResult = await _userManager.CreateAsync(newUser);
 

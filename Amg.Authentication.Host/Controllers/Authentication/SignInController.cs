@@ -40,8 +40,6 @@ namespace Amg.Authentication.Host.Controllers.Authentication
             _commandBus = commandBus;
         }
 
-
-
         [HttpPost("password")]
         [AllowAnonymous]
         public async Task<IActionResult> SignInByPassword(SignInByPasswordRequest command)
@@ -57,9 +55,9 @@ namespace Amg.Authentication.Host.Controllers.Authentication
             return OkResult(loginResult.ToDto(), loginResult.Result.GetResultMessage());
         }
 
-        [HttpPost(nameof(SubmitRegisterWithPhoneNumber))]
+        [HttpPost("Otp")]
         [AllowAnonymous]
-        public async Task<IActionResult> SubmitRegisterWithPhoneNumber(SignInByPhoneNumberRequest command)
+        public async Task<IActionResult> SignInByOtp(SignInByPhoneNumberRequest command)
         {
             command.Validate();
             var loginResult = await _signInService.PhoneNumberSignIn(command);

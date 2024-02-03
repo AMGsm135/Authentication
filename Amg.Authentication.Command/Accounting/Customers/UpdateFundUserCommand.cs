@@ -7,27 +7,30 @@ namespace Amg.Authentication.Command.Accounting.Customers
 {
     public class UpdateCustomerCommand : CommandBase
     {
-        /// <summary>
-        /// شناسه کاربر
-        /// </summary>
         public Guid UserId { get; set; }
-        
-        /// <summary>
-        /// نام
-        /// </summary>
-        public string Name { get; set; }
-        
-        /// <summary>
-        /// شماره موبایل
-        /// </summary>
-        public string PhoneNumber { get; set; }
+
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+
+        public string? Email { get; set; }
+
+        public string City { get; set; }
+
+        public string Province { get; set; }
+
+        public string PostalAddress { get; set; }
+
+        public string PostalCode { get; set; }
+
+        public string AccessToken { get; set; }
 
         /// <inheritdoc />
         public override void Validate()
         {
             base.Validate();
             new UpdateCustomerCommandValidator().Validate(this).RaiseExceptionIfRequired();
-        } 
+        }
     }
 
     public class UpdateCustomerCommandValidator : AbstractValidator<UpdateCustomerCommand>
@@ -35,8 +38,7 @@ namespace Amg.Authentication.Command.Accounting.Customers
         public UpdateCustomerCommandValidator()
         {
             RuleFor(p => p.UserId).NotEmpty().WithMessage("شناسه کاربر الزامی است");
-            RuleFor(p => p.Name).NotEmpty().WithMessage("نام الزامی است");
-            RuleFor(p => p.PhoneNumber).NotEmpty().WithMessage("شماره موبایل الزامی است");
+            RuleFor(p => p.FirstName).NotEmpty().WithMessage("نام الزامی است");
         }
     }
 }

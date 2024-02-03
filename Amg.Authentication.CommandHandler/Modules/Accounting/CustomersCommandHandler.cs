@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Amg.Authentication.Application.Contract.Exceptions;
 using Amg.Authentication.Application.Contract.Services;
@@ -11,14 +13,16 @@ using Amg.Authentication.DomainModel.Modules.Users;
 using Amg.Authentication.Infrastructure.Base;
 using Amg.Authentication.Infrastructure.Enums;
 using Amg.Authentication.Infrastructure.Enums.UserActivities;
+using Amg.Authentication.Infrastructure.Settings;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace Amg.Authentication.CommandHandler.Modules.Accounting
 {
     public class CustomersCommandHandler : /*StorageLogService<RegisterCustomerCommand, int>,*/ ICommandHandler,
         ICommandHandler<RegisterCustomerCommand>,
-        ICommandHandler<RegisterCustomerWithPhoneNumberCommand, TimeSpan>,
         ICommandHandler<UpdateCustomerPhoneNumberCommand>,
         ICommandHandler<UpdateCustomerCommand>,
         ICommandHandler<ResendActivationCodeCommand>,
@@ -30,10 +34,13 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         private readonly IClientInfoGrabber _clientInfoGrabber;
         private readonly IBusControl _bus;
         private readonly ICacheService _cacheService;
+        private readonly HostSettings _hostSettings;
+
 
 
         public CustomersCommandHandler(UserManager<User> userManager, ISignInService signInService,
-            IClientInfoGrabber clientInfoGrabber, IBusControl bus, ICacheService cacheService, /*ILogger<RegisterCustomerCommand> logger,*/ IServiceProvider serviceProvider) /*: base(logger, serviceProvider, 100)*/
+            IClientInfoGrabber clientInfoGrabber, IBusControl bus, ICacheService cacheService, IOptions<HostSettings> hostSetting
+            /*ILogger<RegisterCustomerCommand> logger,*/) /*: base(logger, serviceProvider, 100)*/
         {
             _userManager = userManager;
             _signInService = signInService;
@@ -44,34 +51,32 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
 
         public async Task HandleAsync(RegisterCustomerCommand command)
         {
-            var currentCustomer = await _userManager.FindByNameAsync(command.UserName);
+            var currentCustomer = _userManager.Users.SingleOrDefault(i => i.PhoneNumber == command.PhoneNumber);
             if (currentCustomer != null)
-            {
-                //LogAdd("نام کاربری وارد شده تکراری می باشد", new ServiceException("نام کاربری وارد شده تکراری می باشد"));
-                throw new ServiceException("نام کاربری وارد شده تکراری می باشد");
-            }
-            var newCustomer = new User(command.UserName, command.Name, command.PersonType, null)
+                throw new ServiceException("شماره همراه وارد شده تکراری می باشد");
+
+            var newCustomer = new User(null, command.FirstName, command.LastName, PersonType.Individual, null, command.City, command.Province)
             {
                 Id = command.Id,
                 PhoneNumber = command.PhoneNumber,
-                NormalizedUserName = command.UserName.ToUpper(),
+                NormalizedUserName = null,
                 PhoneNumberConfirmed = false,
-                Email = command.Email,
+                Email = null,
                 EmailConfirmed = false,
                 TwoFactorEnabled = false,
             };
-            var createResult = await _userManager.CreateAsync(newCustomer, command.Password);
+            var createResult = await _userManager.CreateAsync(newCustomer);
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
 
-                await _signInService.GenerateAndSendActivationCode(newCustomer);
+                //await _signInService.GenerateAndSendActivationCode(newCustomer);
                 //Successfully Add To Database
                 //LogAdd();
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newCustomer.Id,
-                    Name = newCustomer.Name,
+                    Name = newCustomer.FirstName + "|" + newCustomer.LastName,
                     Email = newCustomer.Email,
                     PhoneNumber = newCustomer.PhoneNumber,
                     ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
@@ -82,35 +87,9 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             }
             else
             {
-                //LogAdd(ex: new ServiceException(createResult.Errors?.FirstOrDefault()?.Description));
                 throw new ServiceException(createResult.Errors?.FirstOrDefault()?.Description);
             }
         }
-
-        /// <summary>
-        /// ثبت نام  با شماره همراه
-        ///نکته : تا زمانی که دریافت کد صورت نگیرد و تایید نشود کاربر وارد دیتا بیس نمیشود 
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        /// <exception cref="ServiceException"></exception>
-        public async Task<TimeSpan> HandleAsync(RegisterCustomerWithPhoneNumberCommand command)
-        {
-            if (_cacheService.ExistsInCache(command.PhoneNumber))
-                return _cacheService.GetTimeToLive(command.PhoneNumber);
-
-            var notificationResult = await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(command.PhoneNumber);
-
-            if (!notificationResult.isSuccess)
-            {
-                //LogAdd<RegisterCustomerWithPhoneNumberCommand>("sms با موفقیت ارسال نشد");
-                throw new ServiceException(notificationResult.message);
-            }
-
-            return _cacheService.GetTimeToLive(command.PhoneNumber);
-        }
-
-
 
 
         public async Task HandleAsync(UpdateCustomerPhoneNumberCommand command)
@@ -135,11 +114,14 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         {
             var user = await GetUser(command.UserId);
 
-            var nameChanged = user.Name != command.Name;
-            var phoneChanged = user.PhoneNumber != command.PhoneNumber;
+            var nameChanged = user.FirstName != command.FirstName || user.LastName != command.LastName;
+            var emailChanged = user.Email != command.Email;
 
-            user.Name = command.Name;
-            user.PhoneNumber = command.PhoneNumber;
+            user.FirstName = command.FirstName;
+            user.LastName = command.LastName;
+            user.City = command.City;
+            user.Province = command.Province;
+            user.Email = command.Email;
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -148,11 +130,42 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 UserId = user.Id,
                 ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
                 IsSuccess = result.Succeeded,
-                Name = nameChanged ? command.Name : null,
-                PhoneNumber = phoneChanged ? user.PhoneNumber : null,
+                Name = nameChanged ? command.FirstName + "|" + command.LastName : null,
+                PhoneNumber = null,
                 TwoFactorEnabled = null,
-                Email = null,
+                Email = emailChanged ? command.Email : null,
             });
+
+            await UpdateCustomerInformation(user, command.PostalCode, command.PostalAddress, command.AccessToken);
+        }
+
+        private async Task UpdateCustomerInformation(User user, string postalCode, string postalAddress, string accessToken)
+        {
+            var _client = new HttpClient();
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var updateCustomerCommand = new
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                City = user.City,
+                Province = user.Province,
+                PostalCode = postalCode,
+                PostalAddress = postalAddress
+            };
+
+            var myContent = JsonConvert.SerializeObject(updateCustomerCommand);
+            var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
+            var byteContent = new ByteArrayContent(buffer);
+
+            byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + $"/Customer/{user.Id}/Update", byteContent);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine(response.ReasonPhrase);
+                throw new ServiceException("مشکل در برقراری ارتباط");
+            }
         }
 
 
@@ -174,7 +187,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 CodeType = SmsCodeType.ActivationCode.ToEventEnum(),
                 Email = user.Email,
                 Mobile = user.PhoneNumber,
-                Name = user.Name
+                Name = user.FirstName + " " + user.LastName,
             });
 
             if (!isValid)
@@ -218,7 +231,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 return _cacheService.GetTimeToLive(command.PhoneNumber);
 
             var result = await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(command.PhoneNumber);
-   
+
             if (!result.isSuccess)
                 throw new ServiceException(result.message);
 

@@ -7,10 +7,12 @@ using Amg.Authentication.Host.SeedWorks;
 using Amg.Authentication.Infrastructure.Base;
 using Amg.Authentication.QueryModel.Services.Accounting;
 using Gridify;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amg.Authentication.Host.Controllers.Accounting
 {
+    [AllowAnonymous]
     [Route(Constants.ApiPrefix + "/v1/[controller]")]
     public class SystemUsersController : ApiControllerBase
     {

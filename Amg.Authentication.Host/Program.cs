@@ -72,7 +72,7 @@ internal class Program
         builder.Services.AddHttpClient(Constants.NotificationHttpClient, (provider, options) =>
         {
             var settings = provider.GetService<IOptions<HostSettings>>();
-            options.BaseAddress = new Uri(settings.Value.CofeMediaApiAddress);
+            options.BaseAddress = new Uri(settings.Value.ShopAddress);
         });
 
         Bootstrapper.Start(builder.Services, builder.Configuration);

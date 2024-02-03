@@ -139,49 +139,26 @@ namespace Amg.Authentication.Application.Services
 
         public async Task<SignInResult> PhoneNumberSignIn(SignInByPhoneNumberRequest command)
         {
-
-            // بررسی وجود شماره همراه در کش
-            if (!_cacheService.ExistsInCache(command.PhoneNumber))
-                return new SignInResult();
-
             /// آیا وضیعت توسعه روشن است
-            if (!_notificationSettings.Sms.DevelopmentMode)
-            {
-                // بررسی تطابق کد ها
-                var isValid = await _cacheService.GetData<string>(command.PhoneNumber) == command.Code;
-                if (!isValid)
-                    return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
-            }
+            //if (!_notificationSettings.Sms.DevelopmentMode)
+            //{
+            // بررسی تطابق کد ها
+            //var isValid = await _cacheService.GetData<string>(command.PhoneNumber) == command.Code;
+            //if (!isValid)
+            //return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
+            //}
 
             // اگر وضیعت توسعه روشن است کد با کد پی فرض باید برابر باشد
-            if (_notificationSettings.Sms.DevelopmentMode && _notificationSettings.Sms.DevelopmentCode != command.Code)
-            {
-                return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
-            }
+            //if (_notificationSettings.Sms.DevelopmentMode && _notificationSettings.Sms.DevelopmentCode != command.Code)
+            //{
+            //return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
+            //}
 
             // بررسی وجود کاربر
-            var user = await _userManager.FindByNameAsync("USERNAME-" + command.PhoneNumber);
+            var user = await _userManager.FindByIdAsync(command.Id.ToString());
 
-            // درست کردن کاربر در صورت وجود نداشتن
-            if (user == null)
-            {
-                user = new User("UserName-" + command.PhoneNumber, "Name-" + command.PhoneNumber, PersonType.Individual, null)
-                {
-                    Id = Guid.NewGuid(),
-                    PhoneNumber = command.PhoneNumber,
-                    PhoneNumberConfirmed = true,
-                    EmailConfirmed = false,
-                    TwoFactorEnabled = false,
-                };
-
-                var createResult = await _userManager.CreateAsync(user);
-
-                if (createResult.Succeeded)
-                    await _userManager.AddToRoleAsync(user, RoleType.Customer.ToString());
-            }
-
-
-            await SendRegisterEvent(user.Id, true, user.PhoneNumber, user.PersonType);
+            if (user is null)
+                return SignInResult.FromResult(SignInResultType.InvalidRequest);
 
             // بررسی فعال بودن کاربر
             if (!user.IsActive)
@@ -210,16 +187,14 @@ namespace Amg.Authentication.Application.Services
 
             var roles = RolesParser.ToRoleTypes(await _userManager.GetRolesAsync(user));
 
-            _cacheService.RemoveData(user.PhoneNumber);
-
             //Log(new EventId(201, "PhoneNumberSignIn"), $"Successfully Login For User with phoneNumber {command.PhoneNumber}", LogEnumType.SuccessLog);
             var result = await SignInByToken(user, roles);
-            await SendUserInformation(user.PhoneNumber, user.Id, result.AccessToken);
+            await SendCustomerInformation(user, result.AccessToken);
             return result;
 
         }
 
-       
+
 
         public async Task<SignInResult> ExternalProviderSignIn(SignInByExternalProviderRequest command, bool userWasCreatedBeforOrNot)
         {
@@ -370,8 +345,7 @@ namespace Amg.Authentication.Application.Services
             switch (_authSettings.VerifyAccountType)
             {
                 case VerifyAccountType.Sms:
-                    var smsCode = await _userManager.GenerateUserTokenAsync(user,
-                        Constants.CustomPhoneTokenProvider, ActivationPurpose);
+                    var smsCode = await _userManager.GenerateUserTokenAsync(user, Constants.CustomPhoneTokenProvider, ActivationPurpose);
                     await _smsSender.SendSmsAsync(user.PhoneNumber, SmsMessages.ActivationCode(smsCode));
                     return;
                 case VerifyAccountType.Email:
@@ -558,20 +532,31 @@ namespace Amg.Authentication.Application.Services
             }
         }
 
-        private async Task SendUserInformation(string phoneNumber, Guid userId, string accessToken)
+        private async Task SendCustomerInformation(User user, string accessToken)
         {
             var _client = new HttpClient();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var addUserCommand = new { PhoneNumber = phoneNumber, AuthenticationId = userId };
-            var myContent = JsonConvert.SerializeObject(addUserCommand);
+            var addCustomerCommand = new
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                City = user.City,
+                Province = user.Province,
+                PhoneNumber = user.PhoneNumber
+            };
+
+            var myContent = JsonConvert.SerializeObject(addCustomerCommand);
             var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
             var byteContent = new ByteArrayContent(buffer);
+
             byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.CofeMediaApiAddress + "/Users/Add", byteContent);
+            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer/Add", byteContent);
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine(response.ReasonPhrase);
+                throw new ServiceException("مشکل در برقراری ارتباط");
             }
         }
 
@@ -660,7 +645,7 @@ namespace Amg.Authentication.Application.Services
                 Roles = roles,
                 UserName = user.UserName,
                 PhoneNumber = user.PhoneNumber,
-                Name = user.Name.Replace("|", " "),
+                Name = $"{user.FirstName} {user.LastName}",
                 PersonType = user.PersonType,
                 TokenExpireAt = DateTime.Now.Add(TimeSpan.FromMinutes(_authSettings.Token.TokenLifeTime)),
                 RefreshExpireAt = DateTime.Now.Add(TimeSpan.FromMinutes(_authSettings.Token.RefreshTimeout))

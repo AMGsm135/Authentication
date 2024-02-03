@@ -46,7 +46,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (currentUser != null)
                 throw new ServiceException("نام کاربری وارد شده تکراری می باشد");
 
-            var newUser = new User(command.UserName, $"{command.FirstName}|{command.LastName}", PersonType.Individual, null)
+            var newUser = new User(command.UserName, command.FirstName, command.LastName, PersonType.Individual, null, null, null)
             {
                 Id = command.Id,
                 PhoneNumber = command.PhoneNumber,
@@ -63,7 +63,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newUser.Id,
-                    Name = newUser.Name,
+                    Name = newUser.FirstName + "|" + newUser.LastName,
                     Email = newUser.Email,
                     PhoneNumber = newUser.PhoneNumber,
                     PersonType = newUser.PersonType.ToEventEnum(),
@@ -79,15 +79,13 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         public async Task HandleAsync(UpdateSystemUserCommand command)
         {
             var user = await GetUser(command.UserId);
-            var newName = $"{command.FirstName}|{command.LastName}";
 
             var activationChanged = user.IsActive != command.IsActive;
-            var nameChanged = user.Name != newName;
-            var phoneChanged = user.PhoneNumber != command.PhoneNumber;
+            var nameChanged = user.FirstName != command.FirstName || user.LastName != command.LastName;
             var twoFactorChanged = user.TwoFactorEnabled != command.TwoFactorEnabled;
 
-            user.Name = newName;
-            user.PhoneNumber = command.PhoneNumber;
+            user.FirstName = user.FirstName;
+            user.LastName = user.LastName;
             user.TwoFactorEnabled = command.TwoFactorEnabled;
             user.IsActive = command.IsActive;
 
@@ -98,8 +96,8 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 UserId = user.Id,
                 ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
                 IsSuccess = result.Succeeded,
-                Name = nameChanged ? newName : null,
-                PhoneNumber = phoneChanged ? user.PhoneNumber : null,
+                Name = nameChanged ? user.FirstName + " " + user.LastName : null,
+                PhoneNumber = null,
                 TwoFactorEnabled = twoFactorChanged ? new bool?(user.TwoFactorEnabled) : null,
                 Email = null,
             });
@@ -126,7 +124,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             {
                 var isSuccess = true;
                 if (command.Roles?.Any() ?? false)
-                    isSuccess =  (await _userManager.AddToRolesAsync(user, command.Roles.Select(i => i.ToString()))).Succeeded;
+                    isSuccess = (await _userManager.AddToRolesAsync(user, command.Roles.Select(i => i.ToString()))).Succeeded;
 
                 await _bus.Publish(new UserRolesChangedEvent()
                 {
@@ -154,7 +152,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                     UserId = user.Id,
                     ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
                     IsSuccess = result.Succeeded,
-                    Role = string.Join(',', userRoles.Except(new[]{selectedRole})
+                    Role = string.Join(',', userRoles.Except(new[] { selectedRole })
                         .Select(i => i.GetDescription()).ToArray()),
                 });
 

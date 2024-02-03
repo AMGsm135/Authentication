@@ -7,7 +7,6 @@ using Amg.Authentication.Host.SeedWorks;
 using Amg.Authentication.Infrastructure.Base;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Amg.Authentication.Infrastructure.Extensions;
 
 namespace Amg.Authentication.Host.Controllers.Accounting
 {
@@ -34,20 +33,6 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             return OkResult(command.Id);
         }
 
-        [HttpPost(nameof(RegisterWithPhoneNumber))]
-        [AllowAnonymous]
-        public async Task<IActionResult> RegisterWithPhoneNumber(RegisterCustomerWithPhoneNumberCommand command)
-        {
-
-            _commandValidator.Validate(command);
-            var expirationTime = await _commandBus.SendAsync<RegisterCustomerWithPhoneNumberCommand, TimeSpan>(command);
-
-            // به درخواست فرانت زمان منقضی شدن برای آن باز میگردد
-            return StatusCode(200, new { Message = "کد تایید برای شما ارسال شده است.", Content = new { ExpirationTime = expirationTime.ConvertToTimestamp() } });
-
-        }
-
-
         [HttpPut("{userId}/update-phoneNumber")]
         public async Task<IActionResult> UpdatePhoneNumber(Guid userId, UpdateCustomerPhoneNumberCommand command)
         {
@@ -60,6 +45,7 @@ namespace Amg.Authentication.Host.Controllers.Accounting
         [HttpPut("{userId}/update-info")]
         public async Task<IActionResult> UpdateInfo(Guid userId, UpdateCustomerCommand command)
         {
+            command.AccessToken = AccessToken;
             command.UserId = userId;
             _commandValidator.Validate(command);
             await _commandBus.SendAsync(command);
@@ -76,16 +62,6 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             return OkResult();
         }
 
-        [HttpPost("activation/resend")]
-        [AllowAnonymous]
-        public async Task<IActionResult> ResendActivationCode(OTPResendActivationCodeCommand command)
-        {
-            _commandValidator.Validate(command);
-            var expirationTime = await _commandBus.SendAsync<OTPResendActivationCodeCommand, TimeSpan>(command);
-
-            return OkResult(new { Message = "کد تایید برای شما ارسال شده است.", Content = new { ExpirationTime = expirationTime.ConvertToTimestamp() } });
-        }
-
         [HttpPost("{userId}/activation/verify")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyActivationCode(Guid userId, VerifyActivationCodeCommand command)
@@ -96,7 +72,7 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             return OkResult();
         }
 
-      
+
 
     }
 }

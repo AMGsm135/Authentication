@@ -35,7 +35,7 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
         /// <summary>
         /// آیا فعال هست؟
         /// </summary>
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
         /// <inheritdoc />
         public override void Validate()
@@ -52,7 +52,6 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
             RuleFor(p => p.UserId).NotEmpty().WithMessage("شناسه کاربر الزامی است");
             RuleFor(p => p.FirstName).NotEmpty().WithMessage("نام الزامی است");
             RuleFor(p => p.LastName).NotEmpty().WithMessage("نام خانوادگی الزامی است");
-            RuleFor(p => p.PhoneNumber).NotEmpty().WithMessage("شماره موبایل الزامی است");
         }
     }
 }

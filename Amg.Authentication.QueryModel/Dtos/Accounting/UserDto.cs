@@ -65,5 +65,16 @@ namespace Amg.Authentication.QueryModel.Dtos.Accounting
         /// آیا کاربر موقتا مسدود شده است؟
         /// </summary>
         public bool LockoutEnabled { get; set; }
+
+        /// <summary>
+        /// شهر
+        /// </summary>
+        public string City { get; set; }
+
+
+        /// <summary>
+        /// استان
+        /// </summary>
+        public string Province { get; set; }
     }
 }

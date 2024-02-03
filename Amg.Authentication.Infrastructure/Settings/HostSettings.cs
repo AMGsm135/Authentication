@@ -8,7 +8,7 @@
         public string HostAddress { get; set; }
         
        
-        public string CofeMediaApiAddress { get; set; }
+        public string ShopAddress { get; set; }
 
     }
 }
