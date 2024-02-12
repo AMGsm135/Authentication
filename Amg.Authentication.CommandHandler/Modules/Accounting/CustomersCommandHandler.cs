@@ -24,6 +24,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
     public class CustomersCommandHandler : /*StorageLogService<RegisterCustomerCommand, int>,*/ ICommandHandler,
         ICommandHandler<RegisterCustomerCommand>,
         ICommandHandler<UpdateCustomerPhoneNumberCommand>,
+        ICommandHandler<ChangeCustomerPhoneNumberCommand>,
         ICommandHandler<UpdateCustomerCommand>,
         ICommandHandler<ResendActivationCodeCommand>,
         ICommandHandler<OTPResendActivationCodeCommand, TimeSpan>,
@@ -55,7 +56,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (currentCustomer != null)
                 throw new ServiceException("شماره همراه وارد شده تکراری می باشد");
 
-            var newCustomer = new User(null, command.FirstName, command.LastName, PersonType.Individual, null, command.City, command.Province)
+            var newCustomer = new User(command.PhoneNumber, command.FirstName, command.LastName, PersonType.Individual, null, command.City, command.Province)
             {
                 Id = command.Id,
                 PhoneNumber = command.PhoneNumber,
@@ -98,6 +99,29 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
 
             user.PhoneNumber = command.PhoneNumber;
             user.PhoneNumberConfirmed = true;
+
+            var result = await _userManager.UpdateAsync(user);
+
+            await _bus.Publish(new UserProfileUpdatedEvent()
+            {
+                UserId = user.Id,
+                ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
+                IsSuccess = result.Succeeded,
+                PhoneNumber = command.PhoneNumber,
+            });
+        }
+
+        public async Task HandleAsync(ChangeCustomerPhoneNumberCommand command)
+        {
+            var user = await GetUser(command.UserId);
+
+            var isPhoneNumberExist = _userManager.Users.Any(i => i.PhoneNumber == command.PhoneNumber);
+
+            if(isPhoneNumberExist)
+                throw new ServiceException("شماره همراه قبلا استفاده شده است");
+
+            user.PhoneNumber = command.PhoneNumber;
+            user.PhoneNumberConfirmed = false;
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -190,8 +214,8 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 Name = user.FirstName + " " + user.LastName,
             });
 
-            if (!isValid)
-                throw new ServiceException("کد وارد شده معتبر نمی باشد.");
+            /*if (!isValid)
+                throw new ServiceException("کد وارد شده معتبر نمی باشد.");*/
 
             user.PhoneNumberConfirmed = true;
             await _userManager.UpdateAsync(user);
@@ -212,7 +236,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 throw new ServiceException("حساب کاربری هم اکنون فعال می باشد.");
             }
 
-            await _signInService.GenerateAndSendActivationCode(user);
+            //await _signInService.GenerateAndSendActivationCode(user);
 
             ///Log<ResendActivationCodeCommand>(new EventId(110, "Resend"), "Successfully ResendActivationCodeCommand", LogEnumType.SuccessLog);
             await _bus.Publish(new UserCodeResentEvent()

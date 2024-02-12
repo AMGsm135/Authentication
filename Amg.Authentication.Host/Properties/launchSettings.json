@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Dgab.Authentication.Host": {
+    "AMG.Authentication.Host": {
       "commandName": "Project",
       "launchUrl": "swagger",
       "environmentVariables": {

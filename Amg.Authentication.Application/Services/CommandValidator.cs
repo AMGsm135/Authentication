@@ -17,7 +17,7 @@ namespace Amg.Authentication.Application.Services
             command.Validate();
             if (command is ICaptchaValidation cmd)
             {
-                _captchaManager.Instance.ValidateCaptcha(cmd);
+                //_captchaManager.Instance.ValidateCaptcha(cmd);
             }
         }
     }

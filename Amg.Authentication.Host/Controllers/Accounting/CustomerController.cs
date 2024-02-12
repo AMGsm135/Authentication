@@ -42,6 +42,16 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             return OkResult("شماره رابط با موفقیت تغییر یافت");
         }
 
+        [HttpPut("{userId}/change-phoneNumber")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ChangePhoneNumber(Guid userId, ChangeCustomerPhoneNumberCommand command)
+        {
+            command.UserId = userId;
+            _commandValidator.Validate(command);
+            await _commandBus.SendAsync(command);
+            return OkResult("شماره رابط با موفقیت تغییر یافت");
+        }
+
         [HttpPut("{userId}/update-info")]
         public async Task<IActionResult> UpdateInfo(Guid userId, UpdateCustomerCommand command)
         {
