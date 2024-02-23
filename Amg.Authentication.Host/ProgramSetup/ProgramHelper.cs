@@ -152,7 +152,7 @@ namespace Amg.Authentication.Host.ProgramSetup
                         return Task.CompletedTask;
                     }
                 };*/
-            }).AddGoogle(options =>
+            })/*.AddGoogle(options =>
             {
                 IConfigurationSection googleAuthNSection =
                     builder.Configuration.GetSection("Authentication:Google");
@@ -165,7 +165,7 @@ namespace Amg.Authentication.Host.ProgramSetup
 
                 options.ClientId = !string.IsNullOrEmpty(envClientId) ? envClientId : clientID;
                 options.ClientSecret = !string.IsNullOrEmpty(envClientSecret) ? envClientSecret : clientSecret;
-            });
+            })*/;
 
             builder.Services.AddAuthorization();
         }
