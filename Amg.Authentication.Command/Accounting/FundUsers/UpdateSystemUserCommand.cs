@@ -25,7 +25,7 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
         /// <summary>
         /// شماره موبایل
         /// </summary>
-        public string PhoneNumber { get; set; }
+        public string UserName { get; set; }
 
         /// <summary>
         /// نیاز به تایید دوعاملی است؟

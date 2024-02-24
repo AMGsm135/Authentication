@@ -80,12 +80,18 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         {
             var user = await GetUser(command.UserId);
 
+            var currentUser = await _userManager.FindByNameAsync(command.UserName);
+            if (currentUser != null)
+                throw new ServiceException("نام کاربری وارد شده تکراری می باشد");
+
             var activationChanged = user.IsActive != command.IsActive;
             var nameChanged = user.FirstName != command.FirstName || user.LastName != command.LastName;
             var twoFactorChanged = user.TwoFactorEnabled != command.TwoFactorEnabled;
 
-            user.FirstName = user.FirstName;
-            user.LastName = user.LastName;
+            user.FirstName = command.FirstName;
+            user.LastName = command.LastName;
+            user.UserName = command.UserName;
+            user.NormalizedUserName = command.UserName.ToUpper();
             user.TwoFactorEnabled = command.TwoFactorEnabled;
             user.IsActive = command.IsActive;
 
