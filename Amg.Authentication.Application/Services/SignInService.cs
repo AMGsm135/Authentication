@@ -12,22 +12,18 @@ using Amg.Authentication.Application.Contract.Services;
 using Amg.Authentication.Application.Events.UserActivities;
 using Amg.Authentication.Application.Mappers;
 using Amg.Authentication.Application.Services.CashServices;
-using Amg.Authentication.Application.Services.LogTracker;
-using Amg.Authentication.Application.Services.LogTracker.Base;
 using Amg.Authentication.DomainModel.Modules.Users;
 using Amg.Authentication.Infrastructure.Enums;
 using Amg.Authentication.Infrastructure.Enums.UserActivities;
 using Amg.Authentication.Infrastructure.Helpers;
 using Amg.Authentication.Infrastructure.Settings;
 using Amg.Authentication.Infrastructure.Shared;
-using Amg.Authentication.Shared;
 using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using StackExchange.Redis;
 using static MassTransit.ValidationResultExtensions;
 using static Org.BouncyCastle.Math.EC.ECCurve;
 using SignInResult = Amg.Authentication.Application.Contract.Dtos.SignInResult;
@@ -155,8 +151,7 @@ namespace Amg.Authentication.Application.Services
             //}
 
             // بررسی وجود کاربر
-            var user = await _userManager.FindByIdAsync(command.Id.ToString());
-
+            var user = _userManager.Users.SingleOrDefault(x => x.PhoneNumber == command.PhoneNumber);
             if (user is null)
                 return SignInResult.FromResult(SignInResultType.InvalidRequest);
 
@@ -187,9 +182,11 @@ namespace Amg.Authentication.Application.Services
 
             var roles = RolesParser.ToRoleTypes(await _userManager.GetRolesAsync(user));
 
+            user.PhoneNumberConfirmed = true;
+            await _userManager.UpdateAsync(user);
+
             //Log(new EventId(201, "PhoneNumberSignIn"), $"Successfully Login For User with phoneNumber {command.PhoneNumber}", LogEnumType.SuccessLog);
             var result = await SignInByToken(user, roles);
-            await SendCustomerInformation(user, result.AccessToken);
             return result;
 
         }
@@ -532,33 +529,7 @@ namespace Amg.Authentication.Application.Services
             }
         }
 
-        private async Task SendCustomerInformation(User user, string accessToken)
-        {
-            var _client = new HttpClient();
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var addCustomerCommand = new
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                City = user.City,
-                Province = user.Province,
-                PhoneNumber = user.PhoneNumber
-            };
-
-            var myContent = JsonConvert.SerializeObject(addCustomerCommand);
-            var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
-            var byteContent = new ByteArrayContent(buffer);
-
-            byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer/Add", byteContent);
-            if (!response.IsSuccessStatusCode)
-            {
-                Console.WriteLine(response.ReasonPhrase);
-                throw new ServiceException("مشکل در برقراری ارتباط");
-            }
-        }
+       
 
         public bool IsTwoFactorChannelAvailable(User user, TwoFactorType type)
         {

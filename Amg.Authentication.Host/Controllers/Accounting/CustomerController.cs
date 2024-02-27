@@ -33,6 +33,23 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             return OkResult(command.Id);
         }
 
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> AddCustomerByAdmin(AddCustomerByAdminCommand command)
+        {
+            command.Id = Guid.NewGuid();
+            await _commandBus.SendAsync(command);
+            return OkResult(command.Id);
+        }
+
+        [HttpPost("send-code")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyActivationCode(SendCodeCommand command)
+        {
+            await _commandBus.SendAsync(command);
+            return OkResult();
+        }
+
         [HttpPut("{userId}/update-phoneNumber")]
         public async Task<IActionResult> UpdatePhoneNumber(Guid userId, UpdateCustomerPhoneNumberCommand command)
         {
@@ -62,6 +79,15 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             return OkResult("اطلاعات با موفقیت تغییر یافت");
         }
 
+        [HttpPut("{userId}/approval")]
+        public async Task<IActionResult> ApproveCustomer(Guid userId, ApproveCustomerCommand command)
+        {
+            command.Id = userId;
+            _commandValidator.Validate(command);
+            await _commandBus.SendAsync(command);
+            return OkResult("اطلاعات با موفقیت تغییر یافت");
+        }
+
         [HttpPost("{userId}/activation/resend")]
         [AllowAnonymous]
         public async Task<IActionResult> ResendActivationCode(Guid userId, ResendActivationCodeCommand command)
@@ -81,6 +107,9 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             await _commandBus.SendAsync(command);
             return OkResult();
         }
+
+
+
 
 
 

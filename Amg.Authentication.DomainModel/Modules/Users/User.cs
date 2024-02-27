@@ -16,8 +16,9 @@ namespace Amg.Authentication.DomainModel.Modules.Users
             this.PersonType = type;
             this.Provider = provider;
             this.IsActive = true;
-            City = city;
-            Province = province;
+            this.City = city;
+            this.Province = province;
+            this.Status = RegisteryStatus.Created;
         }
 
         /// <summary>
@@ -74,6 +75,10 @@ namespace Amg.Authentication.DomainModel.Modules.Users
         /// رمز تولید کد یک بار مصرف
         /// </summary>
         public string OtpSecretCode { get; set; }
+
+
+        public RegisteryStatus Status { get; set; }
+
 
         public void Activate() => IsActive = true;
 

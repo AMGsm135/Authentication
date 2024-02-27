@@ -28,7 +28,10 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         ICommandHandler<UpdateCustomerCommand>,
         ICommandHandler<ResendActivationCodeCommand>,
         ICommandHandler<OTPResendActivationCodeCommand, TimeSpan>,
-        ICommandHandler<VerifyActivationCodeCommand>
+        ICommandHandler<VerifyActivationCodeCommand>,
+        ICommandHandler<SendCodeCommand>,
+        ICommandHandler<AddCustomerByAdminCommand>,
+        ICommandHandler<ApproveCustomerCommand>
     {
         private readonly UserManager<User> _userManager;
         private readonly ISignInService _signInService;
@@ -70,10 +73,113 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
+                await SendCustomerInformation(newCustomer);
+                await _bus.Publish(new UserRegisteredEvent()
+                {
+                    UserId = newCustomer.Id,
+                    Name = newCustomer.FirstName + "|" + newCustomer.LastName,
+                    Email = newCustomer.Email,
+                    PhoneNumber = newCustomer.PhoneNumber,
+                    ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
+                    PersonType = newCustomer.PersonType.ToEventEnum(),
+                    IsSuccess = true,
+                    ByAdmin = false,
+                });
+            }
+            else
+            {
+                throw new ServiceException(createResult.Errors?.FirstOrDefault()?.Description);
+            }
+        }
 
-                //await _signInService.GenerateAndSendActivationCode(newCustomer);
-                //Successfully Add To Database
-                //LogAdd();
+        public async Task HandleAsync(ApproveCustomerCommand command)
+        {
+            var user = await GetUser(command.Id);
+
+            user.Status = command.IsApproved ? RegisteryStatus.Accepted : RegisteryStatus.Rejected;
+
+            var result = await _userManager.UpdateAsync(user);
+            await ApproveCustomer(user.Id, command.IsApproved);
+            await _bus.Publish(new UserProfileUpdatedEvent()
+            {
+                UserId = user.Id,
+                ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
+                IsSuccess = result.Succeeded,
+                PhoneNumber = user.PhoneNumber,
+            });
+        }
+
+        private async Task ApproveCustomer(Guid userId, bool isApproved)
+        {
+            var _client = new HttpClient();
+
+            var approveCommand = new
+            {
+                Id = userId,
+                IsApproved = isApproved,
+            };
+
+            var myContent = JsonConvert.SerializeObject(approveCommand);
+            var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
+            var byteContent = new ByteArrayContent(buffer);
+
+            byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer/Approve", byteContent);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine(response.ReasonPhrase);
+                throw new ServiceException("مشکل در برقراری ارتباط");
+            }
+        }
+
+        private async Task SendCustomerInformation(User user)
+        {
+            var _client = new HttpClient();
+
+            var addCustomerCommand = new
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                City = user.City,
+                Province = user.Province,
+                PhoneNumber = user.PhoneNumber
+            };
+
+            var myContent = JsonConvert.SerializeObject(addCustomerCommand);
+            var buffer = System.Text.Encoding.UTF8.GetBytes(myContent);
+            var byteContent = new ByteArrayContent(buffer);
+
+            byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer/Add", byteContent);
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine(response.ReasonPhrase);
+                throw new ServiceException("مشکل در برقراری ارتباط");
+            }
+        }
+
+        public async Task HandleAsync(AddCustomerByAdminCommand command)
+        {
+            var currentCustomer = _userManager.Users.SingleOrDefault(i => i.PhoneNumber == command.PhoneNumber);
+            if (currentCustomer != null)
+                throw new ServiceException("شماره همراه وارد شده تکراری می باشد");
+
+            var newCustomer = new User(command.PhoneNumber, command.FirstName, command.LastName, PersonType.Individual, null, command.City, command.Province)
+            {
+                Id = command.Id,
+                PhoneNumber = command.PhoneNumber,
+                NormalizedUserName = null,
+                PhoneNumberConfirmed = false,
+                Email = null,
+                EmailConfirmed = false,
+                TwoFactorEnabled = false,
+            };
+            var createResult = await _userManager.CreateAsync(newCustomer);
+            if (createResult.Succeeded)
+            {
+                await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
+                await SendCustomerInformation(newCustomer);
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newCustomer.Id,
@@ -117,7 +223,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
 
             var isPhoneNumberExist = _userManager.Users.Any(i => i.PhoneNumber == command.PhoneNumber);
 
-            if(isPhoneNumberExist)
+            if (isPhoneNumberExist)
                 throw new ServiceException("شماره همراه قبلا استفاده شده است");
 
             user.PhoneNumber = command.PhoneNumber;
@@ -193,6 +299,22 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         }
 
 
+        public async Task HandleAsync(SendCodeCommand command)
+        {
+            var user = _userManager.Users.SingleOrDefault(i => i.PhoneNumber == command.PhoneNumber);
+
+
+            //به خاطر مسائل امنیتی ما به کاربر اعلام نمیکنیم که آیا این یوزر در سیستم وجود دارد یا خیر
+            if (user == null)
+                return;
+
+            if(user.Status != RegisteryStatus.Accepted)
+                throw new ServiceException("ثبت نام شما تایید نشده است");
+
+            // چون هنوز پنل پیامکی نداریم چیزی نمیفرستیم 
+            //await _signInService.GenerateAndSendActivationCode(user);            
+        }
+
         public async Task HandleAsync(VerifyActivationCodeCommand command)
         {
             var user = await GetUser(command.UserId, false);
@@ -207,7 +329,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             {
                 UserId = user.Id,
                 ClientInfo = _clientInfoGrabber.GetClientInfo().ToEvent(),
-                IsSuccess = isValid,
+                IsSuccess = true,//isValid,
                 CodeType = SmsCodeType.ActivationCode.ToEventEnum(),
                 Email = user.Email,
                 Mobile = user.PhoneNumber,
@@ -271,7 +393,6 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
 
             return user;
         }
-
 
 
     }

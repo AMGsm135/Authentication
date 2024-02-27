@@ -71,6 +71,7 @@ namespace Amg.Authentication.Host.Controllers.Authentication
         }
 
 
+
         [HttpPost("two-factor")]
         [AllowAnonymous]
         public async Task<IActionResult> LoginByTwoFactorCode(SignInByTwoFactorCodeRequest command)

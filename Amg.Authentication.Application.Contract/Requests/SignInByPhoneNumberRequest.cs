@@ -6,8 +6,6 @@ namespace Amg.Authentication.Application.Contract.Requests
 {
     public class SignInByPhoneNumberRequest
     {
-        public Guid Id { get; set; }
-
         public string PhoneNumber { get; set; }
 
         public string VerifyCode { get; set; }
