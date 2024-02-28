@@ -51,6 +51,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             _clientInfoGrabber = clientInfoGrabber;
             _bus = bus;
             _cacheService = cacheService;
+            _hostSettings = hostSetting.Value;
         }
 
         public async Task HandleAsync(RegisterCustomerCommand command)
