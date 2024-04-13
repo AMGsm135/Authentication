@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Amg.Authentication.Command.Extensions;
 using Amg.Authentication.Infrastructure.Base;
 using FluentValidation;
@@ -10,18 +11,20 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
         public Guid Id { get; set; }
 
         public string FirstName { get; set; }
-        
+
         public string LastName { get; set; }
 
         public string UserName { get; set; }
 
         public string PhoneNumber { get; set; }
-        
+
         public string Email { get; set; }
-        
+
         public bool TwoFactorEnabled { get; set; }
 
         public string Password { get; set; }
+
+        public List<Guid> GroupIds { get; set; }
 
         public override void Validate()
         {
@@ -39,6 +42,7 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
             RuleFor(p => p.LastName).NotEmpty().WithMessage("نام خانوادگی الزامی است");
             RuleFor(p => p.UserName).NotEmpty().WithMessage("نام کاربری الزامی است");
             RuleFor(p => p.Password).NotEmpty().WithMessage("رمز عبور الزامی است");
+            RuleFor(p => p.GroupIds.Count).GreaterThanOrEqualTo(1).WithMessage("حداقل یک نقش برای کاربر الزامی است");
         }
     }
 }

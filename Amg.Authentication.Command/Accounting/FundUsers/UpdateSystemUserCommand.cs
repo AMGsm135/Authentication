@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Amg.Authentication.Command.Extensions;
 using Amg.Authentication.Infrastructure.Base;
 using FluentValidation;
@@ -11,7 +12,7 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
         /// شناسه کاربر
         /// </summary>
         public Guid UserId { get; set; }
-        
+
         /// <summary>
         /// نام
         /// </summary>
@@ -37,12 +38,14 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
         /// </summary>
         public bool IsActive { get; set; } = true;
 
+        public List<Guid> GroupIds { get; set; }
+
         /// <inheritdoc />
         public override void Validate()
         {
             base.Validate();
             new UpdateFundUserCommandValidator().Validate(this).RaiseExceptionIfRequired();
-        } 
+        }
     }
 
     public class UpdateFundUserCommandValidator : AbstractValidator<UpdateSystemUserCommand>
@@ -52,6 +55,7 @@ namespace Amg.Authentication.Command.Accounting.FundUsers
             RuleFor(p => p.UserId).NotEmpty().WithMessage("شناسه کاربر الزامی است");
             RuleFor(p => p.FirstName).NotEmpty().WithMessage("نام الزامی است");
             RuleFor(p => p.LastName).NotEmpty().WithMessage("نام خانوادگی الزامی است");
+            RuleFor(p => p.GroupIds.Count).GreaterThanOrEqualTo(1).WithMessage("حداقل یک نقش برای کاربر الزامی است");
         }
     }
 }

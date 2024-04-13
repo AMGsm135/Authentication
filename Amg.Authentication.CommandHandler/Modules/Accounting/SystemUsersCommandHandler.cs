@@ -6,6 +6,7 @@ using Amg.Authentication.Application.Contract.Services;
 using Amg.Authentication.Application.Events.UserActivities;
 using Amg.Authentication.Command.Accounting.FundUsers;
 using Amg.Authentication.CommandHandler.Mappers;
+using Amg.Authentication.DomainModel.Modules.Groups.Interfaces;
 using Amg.Authentication.DomainModel.Modules.Users;
 using Amg.Authentication.Infrastructure.Base;
 using Amg.Authentication.Infrastructure.Enums;
@@ -29,15 +30,19 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         private readonly UserManager<User> _userManager;
         private readonly AuthSettings _authSettings;
         private readonly IClientInfoGrabber _clientInfoGrabber;
+        private readonly IGroupRepository _groupRepository;
         private readonly IBusControl _bus;
+        private readonly IUnitOfWork _unitOfWork;
 
         public SystemUsersCommandHandler(IOptions<AuthSettings> authSettings, UserManager<User> userManager,
-            IClientInfoGrabber clientInfoGrabber, IBusControl bus)
+            IClientInfoGrabber clientInfoGrabber, IBusControl bus, IGroupRepository groupRepository, IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _clientInfoGrabber = clientInfoGrabber;
             _bus = bus;
             _authSettings = authSettings.Value;
+            _groupRepository = groupRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task HandleAsync(RegisterSystemUserCommand command)
@@ -56,6 +61,11 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             };
 
             var createResult = await _userManager.CreateAsync(newUser, command.Password);
+
+            var groups = await _groupRepository.GetByIdsAsync(command.GroupIds.ToArray());
+            groups.ForEach(i => i.AddUser(command.Id));
+
+            
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newUser, RoleType.SystemUser.ToString());
@@ -96,6 +106,12 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             user.IsActive = command.IsActive;
 
             var result = await _userManager.UpdateAsync(user);
+
+            var newGroups = await _groupRepository.GetByIdsAsync(command.GroupIds.ToArray());
+            var oldGroups = await _groupRepository.GetAllUserGroupsAsync(command.UserId);
+            oldGroups.ForEach(i => i.Group.RemoveUser(i));
+            newGroups.ForEach(i => i.AddUser(command.UserId));
+            await _unitOfWork.SaveChangesAsync();
 
             await _bus.Publish(new UserProfileUpdatedEvent()
             {
