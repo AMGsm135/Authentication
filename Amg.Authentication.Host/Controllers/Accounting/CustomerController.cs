@@ -107,11 +107,5 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             await _commandBus.SendAsync(command);
             return OkResult();
         }
-
-
-
-
-
-
     }
 }

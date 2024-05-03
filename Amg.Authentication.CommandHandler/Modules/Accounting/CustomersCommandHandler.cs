@@ -310,10 +310,9 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 return;
 
             if(user.Status != RegisteryStatus.Accepted)
-                throw new ServiceException("ثبت نام شما تایید نشده است");
+                throw new ServiceException("ثبت نام شما تایید نشده است");*/
 
-            // چون هنوز پنل پیامکی نداریم چیزی نمیفرستیم 
-            //await _signInService.GenerateAndSendActivationCode(user);            
+            await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);            
         }
 
         public async Task HandleAsync(VerifyActivationCodeCommand command)
