@@ -56,14 +56,14 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
 
         public async Task HandleAsync(RegisterCustomerCommand command)
         {
-            var currentCustomer = _userManager.Users.SingleOrDefault(i => i.PhoneNumber == command.PhoneNumber);
+            var currentCustomer = _userManager.Users.SingleOrDefault(i => i.PhoneNumber == command.CellPhone);
             if (currentCustomer != null)
                 throw new ServiceException("شماره همراه وارد شده تکراری می باشد");
 
-            var newCustomer = new User(command.PhoneNumber, command.FirstName, command.LastName, PersonType.Individual, null, command.City, command.Province)
+            var newCustomer = new User(command.CellPhone, command.FirstName, command.LastName, PersonType.Individual, null, command.City, command.Province)
             {
                 Id = command.Id,
-                PhoneNumber = command.PhoneNumber,
+                PhoneNumber = command.CellPhone,
                 NormalizedUserName = null,
                 PhoneNumberConfirmed = false,
                 Email = null,
@@ -152,7 +152,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             var byteContent = new ByteArrayContent(buffer);
 
             byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer/Add", byteContent);
+            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer", byteContent);
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine(response.ReasonPhrase);

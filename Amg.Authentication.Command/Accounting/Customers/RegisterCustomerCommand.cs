@@ -17,7 +17,7 @@ namespace Amg.Authentication.Command.Accounting.Customers
 
         public string Province { get; set; }
 
-        public string PhoneNumber { get; set; }
+        public string CellPhone { get; set; }
 
         public override void Validate()
         {
@@ -35,7 +35,7 @@ namespace Amg.Authentication.Command.Accounting.Customers
             RuleFor(p => p.LastName).NotEmpty().WithMessage("نام خانوادگی الزامی است");
             RuleFor(p => p.City).NotEmpty().WithMessage("شهر الزامی است");
             RuleFor(p => p.Province).NotEmpty().WithMessage("استان الزامی است");
-            RuleFor(p => p.PhoneNumber).NotEmpty().WithMessage("شماره موبایل الزامی است");
+            RuleFor(p => p.CellPhone).NotEmpty().WithMessage("شماره موبایل الزامی است");
         }
     }
 }
