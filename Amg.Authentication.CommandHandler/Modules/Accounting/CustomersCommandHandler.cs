@@ -74,7 +74,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
-                await SendCustomerInformation(newCustomer);
+                await SendCustomerInformation(newCustomer, null, null);
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newCustomer.Id,
@@ -125,7 +125,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             var byteContent = new ByteArrayContent(buffer);
 
             byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + "/Customer/Approve", byteContent);
+            using HttpResponseMessage response = await _client.PutAsync(_hostSettings.ShopAddress + $"/Customer/{userId}/Approve", byteContent);
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine(response.ReasonPhrase);
@@ -133,7 +133,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             }
         }
 
-        private async Task SendCustomerInformation(User user)
+        private async Task SendCustomerInformation(User user, string postalCode, string postalAddress)
         {
             var _client = new HttpClient();
 
@@ -144,7 +144,10 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 LastName = user.LastName,
                 City = user.City,
                 Province = user.Province,
-                PhoneNumber = user.PhoneNumber
+                PhoneNumber = user.PhoneNumber,
+                PostalCode = postalCode,
+                PostalAddress = postalAddress,
+                Email = user.Email
             };
 
             var myContent = JsonConvert.SerializeObject(addCustomerCommand);
@@ -171,8 +174,9 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 Id = command.Id,
                 PhoneNumber = command.PhoneNumber,
                 NormalizedUserName = null,
+                NormalizedEmail = command.Email,
                 PhoneNumberConfirmed = false,
-                Email = null,
+                Email = command.Email,
                 EmailConfirmed = false,
                 TwoFactorEnabled = false,
             };
@@ -180,7 +184,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
-                await SendCustomerInformation(newCustomer);
+                await SendCustomerInformation(newCustomer, command.PostalCode, command.PostalAddress);
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newCustomer.Id,
@@ -283,7 +287,8 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 City = user.City,
                 Province = user.Province,
                 PostalCode = postalCode,
-                PostalAddress = postalAddress
+                PostalAddress = postalAddress,
+                Email = user.Email,
             };
 
             var myContent = JsonConvert.SerializeObject(updateCustomerCommand);
@@ -291,7 +296,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             var byteContent = new ByteArrayContent(buffer);
 
             byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            using HttpResponseMessage response = await _client.PostAsync(_hostSettings.ShopAddress + $"/Customer/{user.Id}/Update", byteContent);
+            using HttpResponseMessage response = await _client.PutAsync(_hostSettings.ShopAddress + $"/Customer/{user.Id}", byteContent);
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine(response.ReasonPhrase);
@@ -309,10 +314,10 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (user == null)
                 return;
 
-            if(user.Status != RegisteryStatus.Accepted)
-                throw new ServiceException("ثبت نام شما تایید نشده است");*/
+            if (user.Status != RegisteryStatus.Accepted)
+                throw new ServiceException("ثبت نام شما تایید نشده است");
 
-            await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);            
+            //await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);            
         }
 
         public async Task HandleAsync(VerifyActivationCodeCommand command)
