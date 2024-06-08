@@ -74,7 +74,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
-                await SendCustomerInformation(newCustomer, null, null);
+                await SendCustomerInformation(newCustomer, null, command.PostalAddress, command.Latitude, command.Longitude);
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newCustomer.Id,
@@ -133,7 +133,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             }
         }
 
-        private async Task SendCustomerInformation(User user, string postalCode, string postalAddress)
+        private async Task SendCustomerInformation(User user, string postalCode, string postalAddress, string latitude, string longitude)
         {
             var _client = new HttpClient();
 
@@ -147,7 +147,9 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 PhoneNumber = user.PhoneNumber,
                 PostalCode = postalCode,
                 PostalAddress = postalAddress,
-                Email = user.Email
+                Email = user.Email,
+                Longitude = latitude,
+                Latitude = longitude
             };
 
             var myContent = JsonConvert.SerializeObject(addCustomerCommand);
@@ -184,7 +186,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newCustomer, RoleType.Customer.ToString());
-                await SendCustomerInformation(newCustomer, command.PostalCode, command.PostalAddress);
+                await SendCustomerInformation(newCustomer, command.PostalCode, command.PostalAddress, command.Latitude, command.Longitude);
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newCustomer.Id,

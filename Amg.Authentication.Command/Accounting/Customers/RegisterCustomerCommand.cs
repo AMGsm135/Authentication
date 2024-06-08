@@ -19,6 +19,12 @@ namespace Amg.Authentication.Command.Accounting.Customers
 
         public string CellPhone { get; set; }
 
+        public string PostalAddress { get; set; }
+
+        public string Latitude { get; set; }
+
+        public string Longitude { get; set; }
+
         public override void Validate()
         {
             base.Validate();
@@ -36,6 +42,9 @@ namespace Amg.Authentication.Command.Accounting.Customers
             RuleFor(p => p.City).NotEmpty().WithMessage("شهر الزامی است");
             RuleFor(p => p.Province).NotEmpty().WithMessage("استان الزامی است");
             RuleFor(p => p.CellPhone).NotEmpty().WithMessage("شماره موبایل الزامی است");
+            RuleFor(p => p.PostalAddress).NotEmpty().WithMessage("آدرس پستی الزامی است");
+            RuleFor(p => p.Latitude).NotEmpty().WithMessage("موقعیت الزامی است");
+            RuleFor(p => p.Longitude).NotEmpty().WithMessage("موقعیت الزامی است");
         }
     }
 }

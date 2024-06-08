@@ -24,5 +24,9 @@ namespace Amg.Authentication.Command.Accounting.Customers
         public string? Email { get; set; }
 
         public string PostalAddress { get; set; }
+
+        public string? Latitude { get; set; }
+
+        public string? Longitude { get; set; }
     }
 }
