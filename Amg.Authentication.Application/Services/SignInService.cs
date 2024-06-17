@@ -135,6 +135,11 @@ namespace Amg.Authentication.Application.Services
 
         public async Task<SignInResult> PhoneNumberSignIn(SignInByPhoneNumberRequest command)
         {
+            // بررسی وجود شماره همراه در کش
+            if (!_cacheService.ExistsInCache(command.PhoneNumber))
+                return new SignInResult();
+
+
             /// آیا وضیعت توسعه روشن است
             if (!_notificationSettings.Sms.DevelopmentMode)
             {

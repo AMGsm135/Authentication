@@ -44,11 +44,11 @@ namespace Amg.Authentication.Application.Services.MessageSenders
         {
             try
             {
-                if (_notificationSettings.Sms.DevelopmentMode)
-                {
-                    _cacheService.SetData(phoneNumber, _notificationSettings.Sms.DevelopmentCode, TimeSpan.FromSeconds(_notificationSettings.Sms.MinimumResendTime));
-                    return (true, string.Empty);
-                }
+                //if (_notificationSettings.Sms.DevelopmentMode)
+                //{
+                //    _cacheService.SetData(phoneNumber, _notificationSettings.Sms.DevelopmentCode, TimeSpan.FromSeconds(_notificationSettings.Sms.MinimumResendTime));
+                //    return (true, string.Empty);
+                //}
 
                 string url = $"https://api.kavenegar.com/v1/3147625A597976776C417076306B6B7A6A63556E4B59546F552F446E3479765137524B735934754C4B55303D/verify/lookup.json?receptor={phoneNumber}&token={message}&template=verify";
            

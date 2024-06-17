@@ -273,10 +273,10 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 Email = emailChanged ? command.Email : null,
             });
 
-            await UpdateCustomerInformation(user, command.PostalCode, command.PostalAddress, command.AccessToken);
+            await UpdateCustomerInformation(user, command.PostalCode, command.PostalAddress, command.AccessToken, command.Latitude, command.Longitude);
         }
 
-        private async Task UpdateCustomerInformation(User user, string postalCode, string postalAddress, string accessToken)
+        private async Task UpdateCustomerInformation(User user, string postalCode, string postalAddress, string accessToken, string latitude, string longitude)
         {
             var _client = new HttpClient();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -291,6 +291,8 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
                 PostalCode = postalCode,
                 PostalAddress = postalAddress,
                 Email = user.Email,
+                Longitude = longitude,
+                Latitude = latitude
             };
 
             var myContent = JsonConvert.SerializeObject(updateCustomerCommand);
@@ -319,7 +321,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (user.Status != RegisteryStatus.Accepted)
                 throw new ServiceException("ثبت نام شما تایید نشده است");
 
-            await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);            
+            await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);
         }
 
         public async Task HandleAsync(VerifyActivationCodeCommand command)
