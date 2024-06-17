@@ -136,19 +136,19 @@ namespace Amg.Authentication.Application.Services
         public async Task<SignInResult> PhoneNumberSignIn(SignInByPhoneNumberRequest command)
         {
             /// آیا وضیعت توسعه روشن است
-            //if (!_notificationSettings.Sms.DevelopmentMode)
-            //{
-            // بررسی تطابق کد ها
-            //var isValid = await _cacheService.GetData<string>(command.PhoneNumber) == command.Code;
-            //if (!isValid)
-            //return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
-            //}
+            if (!_notificationSettings.Sms.DevelopmentMode)
+            {
+                // بررسی تطابق کد ها
+                var isValid = await _cacheService.GetData<string>(command.PhoneNumber) == command.VerifyCode;
+                if (!isValid)
+                    return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
+            }
 
             // اگر وضیعت توسعه روشن است کد با کد پی فرض باید برابر باشد
-            //if (_notificationSettings.Sms.DevelopmentMode && _notificationSettings.Sms.DevelopmentCode != command.Code)
-            //{
-            //return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
-            //}
+            if (_notificationSettings.Sms.DevelopmentMode && _notificationSettings.Sms.DevelopmentCode != command.VerifyCode)
+            {
+                return SignInResult.FromResult(SignInResultType.OneTimePasswordInvalid);
+            }
 
             // بررسی وجود کاربر
             var user = _userManager.Users.SingleOrDefault(x => x.PhoneNumber == command.PhoneNumber);
@@ -529,7 +529,7 @@ namespace Amg.Authentication.Application.Services
             }
         }
 
-       
+
 
         public bool IsTwoFactorChannelAvailable(User user, TwoFactorType type)
         {

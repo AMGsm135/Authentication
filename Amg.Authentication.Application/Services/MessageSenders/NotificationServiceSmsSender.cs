@@ -8,6 +8,7 @@ using Amg.Authentication.Infrastructure.Settings;
 using Kavenegar.Exceptions;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using static System.Net.WebRequestMethods;
 
 namespace Amg.Authentication.Application.Services.MessageSenders
 {
@@ -43,47 +44,36 @@ namespace Amg.Authentication.Application.Services.MessageSenders
         {
             try
             {
-                /*if (_notificationSettings.Sms.DevelopmentMode)
+                if (_notificationSettings.Sms.DevelopmentMode)
                 {
                     _cacheService.SetData(phoneNumber, _notificationSettings.Sms.DevelopmentCode, TimeSpan.FromSeconds(_notificationSettings.Sms.MinimumResendTime));
                     return (true, string.Empty);
-                }  */
+                }
 
-                Kavenegar.KavenegarApi api = new Kavenegar.KavenegarApi("3147625A597976776C417076306B6B7A6A63556E4B59546F552F446E3479765137524B735934754C4B55303D");
-                var result = api.Send("1000689696", "09192172990", "خدمات پیام کوتاه کاوه نگار");
-               
-               
-                string url = $"{_notificationSettings.Sms.ApiKey}?receptor={phoneNumber}&token={message}";
-                return (true, string.Empty);
+                string url = $"https://api.kavenegar.com/v1/3147625A597976776C417076306B6B7A6A63556E4B59546F552F446E3479765137524B735934754C4B55303D/verify/lookup.json?receptor={phoneNumber}&token={message}&template=verify";
+           
+                using (var httpClient = new HttpClient())
+                {
+                    var response = await httpClient.PostAsync(url, null);
 
-                /*  using (var httpClient = new HttpClient())
-                  {
-                      var response = await httpClient.PostAsync(url, null);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("SMS Exception Error Occurred: " + response.ReasonPhrase + "," + response.StatusCode + "StatusCode : " + response.IsSuccessStatusCode.ToString());
+                        return (false, "ارتباط با  پنل پیامکی برقرار نشد .");
+                    }
 
-                      if (!response.IsSuccessStatusCode)
-                      {
-                          Console.WriteLine("SMS Exception Error Occurred: " + response.ReasonPhrase + "," + response.StatusCode + "StatusCode : " + response.IsSuccessStatusCode.ToString());
-                          return (false, "ارتباط با  پنل پیامکی برقرار نشد .");
-                      }
+                    _cacheService.SetData(phoneNumber, message, TimeSpan.FromSeconds(_notificationSettings.Sms.MinimumResendTime));
 
-                      _cacheService.SetData(phoneNumber, message, TimeSpan.FromSeconds(_notificationSettings.Sms.MinimumResendTime));
+                    return (true, string.Empty);
 
-                      return (true, string.Empty);
+                }
 
-                  }*/
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error Message : " + ex.Message + "Inner Exception : " + ex.InnerException.Message);
                 return (false, "به هنگام ارسال پیامک اختلالی رخ داده است لطفا  مجددا تلاش کنید");
             }
-          /*  catch (KavenegarException ex)
-            {
-                Console.WriteLine(ex);
-                return (true, string.Empty);
-
-            }*/
-
         }
     }
 }

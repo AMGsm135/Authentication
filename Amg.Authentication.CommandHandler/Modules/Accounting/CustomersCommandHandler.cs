@@ -319,7 +319,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (user.Status != RegisteryStatus.Accepted)
                 throw new ServiceException("ثبت نام شما تایید نشده است");
 
-            //await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);            
+            await _signInService.GenerateAndSendConfirmRegisterWithPhoneNumberCode(user.PhoneNumber);            
         }
 
         public async Task HandleAsync(VerifyActivationCodeCommand command)
