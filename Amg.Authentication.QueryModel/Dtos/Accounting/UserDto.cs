@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Amg.Authentication.Infrastructure.Enums;
+using Amg.Authentication.QueryModel.Dtos.Authorization;
 
 namespace Amg.Authentication.QueryModel.Dtos.Accounting
 {
@@ -76,5 +77,7 @@ namespace Amg.Authentication.QueryModel.Dtos.Accounting
         /// استان
         /// </summary>
         public string Province { get; set; }
+
+        public IList<GroupDto>? Groups { get; set; }
     }
 }

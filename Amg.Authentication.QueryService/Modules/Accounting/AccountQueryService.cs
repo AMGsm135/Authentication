@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Amg.Authentication.DomainModel.Modules.Groups;
+using Amg.Authentication.DomainModel.Modules.Groups.Interfaces;
 using Amg.Authentication.DomainModel.Modules.Users;
 using Amg.Authentication.Infrastructure.Enums;
 using Amg.Authentication.Infrastructure.Extensions;
@@ -17,11 +19,12 @@ namespace Amg.Authentication.QueryService.Modules.Accounting
     public class AccountQueryService : IAccountQueryService
     {
         private readonly UserManager<User> _userManager;
+        private readonly IGroupRepository _groupRepository;
 
-
-        public AccountQueryService(UserManager<User> userManager)
+        public AccountQueryService(UserManager<User> userManager, IGroupRepository groupRepository)
         {
             _userManager = userManager;
+            _groupRepository = groupRepository;
         }
 
         /// <inheritdoc />
@@ -41,8 +44,11 @@ namespace Amg.Authentication.QueryService.Modules.Accounting
             if (user == null)
                 throw new QueryServiceNotFoundException("کاربر یافت نشد.");
 
+            var userGroups = await _groupRepository.GetAllUserGroupsAsync(userId);
+            var group = userGroups.Select(i => i.Group).ToList();
+
             var roles = await _userManager.GetRolesAsync(user);
-            return user.ToDto(roles);
+            return user.ToDto(roles, group);
 
         }
 
@@ -51,9 +57,21 @@ namespace Amg.Authentication.QueryService.Modules.Accounting
             // todo :: improve bad implementation
             var fundUsers = await _userManager.GetUsersInRoleAsync(RoleType.SystemUser.ToString());
             var filteredUsers = fundUsers.AsQueryable().GridifyQueryable(query);
+            var fundUserIds = fundUsers.Select(i => i.Id).ToList();
+
+            var dictionary = new Dictionary<Guid, List<Group>>();
+
+            foreach (var fundUser in filteredUsers.Query)
+            {
+                var userGroups = await _groupRepository.GetAllUserGroupsAsync(fundUser.Id);
+                dictionary.Add(fundUser.Id, userGroups.Select(i => i.Group).ToList());
+            }
+
+
+            var groups = await _groupRepository.GetAllAsync();
 
             return new Paging<UserDto>(filteredUsers.Count, filteredUsers.Query
-                    .Select(i => i.ToDto(_userManager.GetRolesAsync(i).Result)));
+                    .Select(i => i.ToDto(_userManager.GetRolesAsync(i).Result, dictionary[i.Id])));
         }
 
         public async Task<List<UserRoleDto>> GetUserRoles(Guid userId)
@@ -71,7 +89,7 @@ namespace Amg.Authentication.QueryService.Modules.Accounting
                     IsInRole = _userManager.IsInRoleAsync(user, i.ToString()).Result
                 })
                 .ToList();
-            
+
             return userRoles;
         }
     }

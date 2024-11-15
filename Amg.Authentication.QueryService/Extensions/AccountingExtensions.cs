@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Amg.Authentication.DomainModel.Modules.Users;
 using Amg.Authentication.QueryModel.Dtos.Accounting;
+using Group = Amg.Authentication.DomainModel.Modules.Groups.Group;
 
 namespace Amg.Authentication.QueryService.Extensions
 {
     public static class AccountingExtensions
     {
-        public static UserDto ToDto(this User user, IList<string> userRoles)
+        public static UserDto ToDto(this User user, IList<string> userRoles, List<Group> groups)
         {
             if (user == null)
                 return null;
@@ -26,7 +28,8 @@ namespace Amg.Authentication.QueryService.Extensions
                 RegisterDateTime = user.RegisterDateTime,
                 Roles = userRoles,
                 TwoFactorEnabled = user.TwoFactorEnabled,
-                LockoutEnabled = user.LockoutEnabled
+                LockoutEnabled = user.LockoutEnabled,
+                Groups = groups.Select(i => i.ToDto(0)).ToList(),
             };
         }
     }

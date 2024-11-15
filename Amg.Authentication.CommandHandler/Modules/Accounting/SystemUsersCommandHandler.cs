@@ -69,7 +69,7 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
             if (createResult.Succeeded)
             {
                 await _userManager.AddToRoleAsync(newUser, RoleType.SystemUser.ToString());
-
+                await _unitOfWork.SaveChangesAsync();
                 await _bus.Publish(new UserRegisteredEvent()
                 {
                     UserId = newUser.Id,

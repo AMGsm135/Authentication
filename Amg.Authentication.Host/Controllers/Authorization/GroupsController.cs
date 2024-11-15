@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Amg.Authentication.Host.Controllers.Authorization
 {
+    [AllowAnonymous]
     [Route(Constants.ApiPrefix + "/v1/[controller]")]
     public class GroupsController : ApiControllerBase
     {
