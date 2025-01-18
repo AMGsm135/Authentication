@@ -313,10 +313,9 @@ namespace Amg.Authentication.CommandHandler.Modules.Accounting
         {
             var user = _userManager.Users.SingleOrDefault(i => i.PhoneNumber == command.PhoneNumber);
 
-
             //به خاطر مسائل امنیتی ما به کاربر اعلام نمیکنیم که آیا این یوزر در سیستم وجود دارد یا خیر
             if (user == null)
-                return;
+                throw new ServiceException("مشتری یافت نشد");
 
             if (user.Status != RegisteryStatus.Accepted)
                 throw new ServiceException("ثبت نام شما تایید نشده است");

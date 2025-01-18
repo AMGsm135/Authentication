@@ -19,38 +19,42 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
-        IConfiguration configuration = builder.Configuration;
-
-        ProgramHelper.SetupAppSettingsConfig(builder);
-        ProgramHelper.ConfigureControllers(builder);
-        ProgramHelper.ConfigureDatabases(builder);
-        ProgramHelper.ConfigureAuthentication(builder);
-        ProgramHelper.ConfigureMassTransit(builder);
-
-        var urlSetting = ReadHostSettings(builder.Configuration).HostAddress;
-
-        string hostname = Dns.GetHostName();
-
-        builder.WebHost.UseUrls(urlSetting).UseKestrel();
-
-        builder.Services.AddMemoryCache();
-        builder.Services.AddScoped<IClientInfoGrabber, ClientInfoGrabber>();
-
-        builder.Services.AddSwaggerGen(option =>
+        try
         {
-            option.SwaggerDoc("v1", new OpenApiInfo { Title = "Authentication API", Version = "v1" });
-            option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+
+
+            var builder = WebApplication.CreateBuilder(args);
+            IConfiguration configuration = builder.Configuration;
+
+            ProgramHelper.SetupAppSettingsConfig(builder);
+            ProgramHelper.ConfigureControllers(builder);
+            ProgramHelper.ConfigureDatabases(builder);
+            ProgramHelper.ConfigureAuthentication(builder);
+            ProgramHelper.ConfigureMassTransit(builder);
+
+            var urlSetting = ReadHostSettings(builder.Configuration).HostAddress;
+
+            string hostname = Dns.GetHostName();
+
+            builder.WebHost.UseUrls(urlSetting).UseKestrel();
+
+            builder.Services.AddMemoryCache();
+            builder.Services.AddScoped<IClientInfoGrabber, ClientInfoGrabber>();
+
+            builder.Services.AddSwaggerGen(option =>
             {
-                In = ParameterLocation.Header,
-                Description = "Please enter a valid token",
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                BearerFormat = "JWT",
-                Scheme = "Bearer"
-            });
-            option.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
+                option.SwaggerDoc("v1", new OpenApiInfo { Title = "Authentication API", Version = "v1" });
+                option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please enter a valid token",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    BearerFormat = "JWT",
+                    Scheme = "Bearer"
+                });
+                option.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
                 {
                     new OpenApiSecurityScheme
                     {
@@ -62,58 +66,64 @@ internal class Program
                     },
                     new string[]{}
                 }
+                });
+
+                //var filePath = Path.Combine(AppContext.BaseDirectory, "MyApi.xml");
+                //option.IncludeXmlComments(filePath);
+
             });
 
-            //var filePath = Path.Combine(AppContext.BaseDirectory, "MyApi.xml");
-            //option.IncludeXmlComments(filePath);
-
-        });
-
-        builder.Services.AddHttpClient(Constants.NotificationHttpClient, (provider, options) =>
-        {
-            var settings = provider.GetService<IOptions<HostSettings>>();
-            options.BaseAddress = new Uri(settings.Value.ShopAddress);
-        });
-
-        Bootstrapper.Start(builder.Services, builder.Configuration);
-
-        try
-        {
-            var app = builder.Build();
-
-            app.Seed();
-
-            if (app.Environment.IsDevelopment())
+            builder.Services.AddHttpClient(Constants.NotificationHttpClient, (provider, options) =>
             {
-                app.UseDeveloperExceptionPage();
-
-
-                app.UseSwagger(c =>
-                {
-                    c.RouteTemplate = "authentication/swagger/{documentname}/swagger.json";
-                });
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/authentication/swagger/v1/swagger.json", "My Cool API V1");
-                    c.RoutePrefix = "authentication/swagger";
-                });
-            }
-
-            app.UseRouting();
-            app.UseCors(Constants.DefaultCorsPolicy);
-            if (app.Environment.IsProduction())
-            {
-                app.UseHttpsRedirection();
-            }
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
+                var settings = provider.GetService<IOptions<HostSettings>>();
+                options.BaseAddress = new Uri(settings.Value.ShopAddress);
             });
 
-            app.Run();
+            Bootstrapper.Start(builder.Services, builder.Configuration);
+
+            try
+            {
+                var app = builder.Build();
+
+                app.Seed();
+
+                if (app.Environment.IsDevelopment())
+                {
+                    app.UseDeveloperExceptionPage();
+
+
+                    app.UseSwagger(c =>
+                    {
+                        c.RouteTemplate = "authentication/swagger/{documentname}/swagger.json";
+                    });
+                    app.UseSwaggerUI(c =>
+                    {
+                        c.SwaggerEndpoint("/authentication/swagger/v1/swagger.json", "My Cool API V1");
+                        c.RoutePrefix = "authentication/swagger";
+                    });
+                }
+
+                app.UseRouting();
+                app.UseCors(Constants.DefaultCorsPolicy);
+                if (app.Environment.IsProduction())
+                {
+                    app.UseHttpsRedirection();
+                }
+                app.UseAuthentication();
+                app.UseAuthorization();
+
+                app.UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                });
+
+                app.Run();
+            }
+            catch (Exception e)
+            {
+
+                throw;
+            }
         }
         catch (Exception exception)
         {

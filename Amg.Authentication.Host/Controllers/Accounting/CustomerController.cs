@@ -30,7 +30,7 @@ namespace Amg.Authentication.Host.Controllers.Accounting
             command.Id = Guid.NewGuid();
             _commandValidator.Validate(command);
             await _commandBus.SendAsync(command);
-            return OkResult(command.Id);
+            return OkResult(command.Id, "ثبت نام با موفقیت انجام شد، در انتظار  تایید ثبت نام توسط مدیر");
         }
 
         [HttpPost]
